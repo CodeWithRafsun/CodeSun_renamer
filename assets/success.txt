@@ -1,0 +1,26 @@
+\033[0;36m
+  sSSs   .S       S.     sSSs    sSSs    sSSs    sSSs    sSSs 
+ d%%SP  .SS       SS.   d%%SP   d%%SP   d%%SP   d%%SP   d%%SP 
+d%S'    S%S       S%S  d%S'    d%S'    d%S'    d%S'    d%S'   
+S%|     S%S       S%S  S%S     S%S     S%S     S%|     S%|    
+S&S     S&S       S&S  S&S     S&S     S&S     S&S     S&S    
+Y&Ss    S&S       S&S  S&S     S&S     S&S     S&S_Ss  Y&Ss   
+`S&&S   S&S       S&S  S&S     S&S     S&S     S&S~SP  `S&&S  
+  `S*S  S&S       S&S  S&S     S&S     S&S     S&S       `S*S 
+   l*S  S*b       d*S  S*b     S*b     S*b     S*b        l*S 
+  .S*P  S*S.     .S*S  S*S.    S*S.    S*S.    S*S.      .S*P 
+sSS*S    SSSbs_sdSSS    SSSbs   SSSbs   SSSbs  sSS*S   sSS*S  
+YSS'      YSSP~YSSY      YSSP    YSSP    YSSP  YSS'    YSS'    
+
+\033[1;33m
+         CodeSun Renamer [v2.0.1] - Advanced video downloader
+
+\033[0;32m
+ ✓ Well done! your Installation process is Completed Successfully
+             [ run 'renamer' to start this tools ]
+
+\033[0;36m
+  Powered      : by CodeSun              Version    : v2.0.1
+  Developed by : Mahedi Hasan Rafsun     github     : @codewithrafsun
+
+\033[0m

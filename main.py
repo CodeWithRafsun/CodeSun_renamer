@@ -1,17 +1,29 @@
 #!/usr/bin/env python3
+
 import os
 import sys
+import time
 import signal
 
-# Add project folders to import path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+sys.path.insert(
+    0,
+    os.path.dirname(os.path.abspath(__file__))
+)
+
 
 from core.renamer_logic import (
     batch_prefix_rename,
-    find_replace_rename, 
+    find_replace_rename,
     add_date_rename,
-    undo_last_rename
+    undo_last_rename,
+    prefix_suffix_rename,
+    convert_case_rename,
+    remove_text_rename,
+    change_extension
 )
+
+
 from utils.helpers import (
     validate_folder,
     validate_extension,
@@ -19,139 +31,674 @@ from utils.helpers import (
     get_file_count
 )
 
+
+
 # Colors
-CYAN = '\033[0;36m'
-GREEN = '\033[0;32m'
-YELLOW = '\033[1;33m'
-RED = '\033[0;31m'
-BOLD = '\033[1m'
-NC = '\033[0m'
 
-def handle_exit(signum, frame):
-    print(f"\n\n{GREEN}Thanks for using RENAMER! Powered by CodeSun ✨{NC}")
-    sys.exit(0)
+CYAN="\033[0;36m"
+GREEN="\033[0;32m"
+YELLOW="\033[1;33m"
+RED="\033[0;31m"
+PURPLE="\033[0;35m"
+RESET="\033[0m"
 
-signal.signal(signal.SIGINT, handle_exit)
 
-def load_banner():
-    banner_path = os.path.join(os.path.dirname(__file__), "assets", "banner.txt")
+
+BASE_DIR=os.path.dirname(__file__)
+
+
+
+
+def decode_file(path):
+
     try:
-        with open(banner_path, "r", encoding="utf-8") as f:
-            return f.read()
+
+        with open(
+            path,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            data=f.read()
+
+            return data.encode().decode(
+                "unicode_escape"
+            )
+
+
     except:
-        return "RENAMER\n"
+
+        return ""
+
+
+
+
+def clear():
+
+    os.system("clear")
+
+
+
+
+def loading(text):
+
+    print(
+        CYAN + text + RESET
+    )
+
+
+    for i in range(25):
+
+        print(
+            "█",
+            end="",
+            flush=True
+        )
+
+        time.sleep(0.03)
+
+
+    print()
+
+
+
+
+def show_banner():
+
+    print(
+        decode_file(
+            os.path.join(
+                BASE_DIR,
+                "assets",
+                "banner.txt"
+            )
+        )
+    )
+
+
+
+
+
+def show_success():
+
+    print(
+        decode_file(
+            os.path.join(
+                BASE_DIR,
+                "assets",
+                "success.txt"
+            )
+        )
+    )
+
+
+
+
+
+def handle_exit(sig,frame):
+
+    print(
+        GREEN +
+        "\nThanks for using CodeSun Renamer ✓"
+        +
+        RESET
+    )
+
+    sys.exit()
+
+
+
+
+signal.signal(
+    signal.SIGINT,
+    handle_exit
+)
+
+
+
+
 
 def show_menu():
-    print(CYAN + load_banner() + NC)
-    print(GREEN + "="*60 + NC)
-    print(f"{BOLD} 1. {CYAN}Batch Prefix Rename{NC} - file_1.jpg, file_2.jpg")
-    print(f"{BOLD} 2. {YELLOW}Find & Replace{NC} - 'vacation' -> 'trip'")
-    print(f"{BOLD} 3. {GREEN}Add Date to Filename{NC} - 2026-06-17_file.jpg")
-    print(f"{BOLD} 4. {RED}Undo Last Rename{NC}")
-    print(f"{BOLD} 5. Exit")
-    print(GREEN + "="*60 + NC)
-    print(YELLOW + " Type '/quit' to exit anytime" + NC)
 
-def get_valid_folder():
+    print(
+        CYAN+
+        """
+================ MENU ================
+
+[1] Batch Prefix Rename
+[2] Find & Replace
+[3] Add Date Rename
+[4] Undo Rename
+
+[5] Prefix + Suffix Rename
+[6] Case Converter
+[7] Remove Text
+[8] Extension Converter
+
+
+/help       Commands
+/about      About
+/version    Version
+/clear      Clear
+/quit       Exit
+
+======================================
+
+"""
+        +
+        RESET
+    )
+
+
+
+
+
+def folder_input():
+
+
     while True:
-        folder = input(f"\n{YELLOW}Enter folder path: {NC}").strip()
-        if folder.lower() == "/quit":
+
+
+        folder=input(
+            YELLOW+
+            "\nFolder path: "
+            +
+            RESET
+        ).strip()
+
+
+
+        if folder=="/quit":
+
             return None
-        
-        valid, error = validate_folder(folder)
+
+
+
+        valid,error=validate_folder(
+            folder
+        )
+
+
+
         if valid:
-            count = get_file_count(folder)
-            print(f"{GREEN}Found {count} files in folder{NC}")
+
+
+            print(
+                GREEN+
+                f"{get_file_count(folder)} files found"
+                +
+                RESET
+            )
+
+
             return folder
+
+
+
         else:
-            print(RED + error + NC)
 
-def mode_1_prefix():
-    folder = get_valid_folder()
-    if not folder: return
-    
-    prefix = input(f"{YELLOW}Enter prefix [default: file]: {NC}").strip() or "file"
-    
-    ext_input = input(f"{YELLOW}Filter by extension [.jpg .txt] or Enter for all: {NC}").strip()
-    valid, ext = validate_extension(ext_input)
-    if not valid:
-        print(RED + ext + NC)
-        ext = None
-    
-    start_input = input(f"{YELLOW}Start number [default: 1]: {NC}").strip()
-    start, msg = validate_number(start_input, 1, 1, 9999)
-    if msg: print(YELLOW + msg + NC)
-    
-    padding_input = input(f"{YELLOW}Padding [default: 3 for 001]: {NC}").strip()
-    padding, msg = validate_number(padding_input, 3, 1, 10)
-    if msg: print(YELLOW + msg + NC)
-    
-    print(f"\n{CYAN}Example: photo.jpg -> {prefix}_{str(start).zfill(padding)}.jpg{NC}")
-    batch_prefix_rename(folder, prefix, ext, start, padding)
 
-def mode_2_replace():
-    folder = get_valid_folder()
-    if not folder: return
-    
-    find_text = input(f"{YELLOW}Enter text to find: {NC}").strip()
-    if not find_text:
-        print(RED + "Error: Find text cannot be empty!" + NC)
+            print(
+                RED+
+                error+
+                RESET
+            )
+
+
+
+
+
+
+
+# ==========================
+# BASIC MODES
+# ==========================
+
+
+
+def mode_1():
+
+
+    folder=folder_input()
+
+
+    if not folder:
         return
-    
-    replace_text = input(f"{YELLOW}Enter text to replace with: {NC}").strip()
-    
-    ext_input = input(f"{YELLOW}Filter by extension or Enter for all: {NC}").strip()
-    valid, ext = validate_extension(ext_input)
-    if not valid:
-        print(RED + ext + NC)
-        ext = None
-    
-    print(f"\n{CYAN}Example: vacation_photo.jpg -> {replace_text}_photo.jpg{NC}")
-    find_replace_rename(folder, find_text, replace_text, ext)
 
-def mode_3_date():
-    folder = get_valid_folder()
-    if not folder: return
-    
-    ext_input = input(f"{YELLOW}Filter by extension or Enter for all: {NC}").strip()
-    valid, ext = validate_extension(ext_input)
-    if not valid:
-        print(RED + ext + NC)
-        ext = None
-    
-    print(f"\n{CYAN}Example: photo.jpg -> 2026-06-17_photo.jpg{NC}")
-    add_date_rename(folder, ext)
 
-def mode_4_undo():
-    folder = get_valid_folder()
-    if not folder: return
-    
-    undo_last_rename(folder)
+
+    prefix=input(
+        "Prefix [file]: "
+    ).strip() or "file"
+
+
+
+    ext=input(
+        "Extension(optional): "
+    ).strip()
+
+
+
+    valid,ext=validate_extension(
+        ext
+    )
+
+
+    if not valid:
+
+        print(
+            RED+ext+RESET
+        )
+
+        ext=None
+
+
+
+    batch_prefix_rename(
+        folder,
+        prefix,
+        ext
+    )
+
+
+
+
+
+
+def mode_2():
+
+
+    folder=folder_input()
+
+
+    if not folder:
+        return
+
+
+
+    find=input(
+        "Find text: "
+    )
+
+
+    replace=input(
+        "Replace text: "
+    )
+
+
+    find_replace_rename(
+        folder,
+        find,
+        replace
+    )
+
+
+
+
+
+
+def mode_3():
+
+
+    folder=folder_input()
+
+
+    if folder:
+
+        add_date_rename(
+            folder
+        )
+
+
+
+
+
+
+def mode_4():
+
+
+    folder=folder_input()
+
+
+    if folder:
+
+        undo_last_rename(
+            folder
+        )
+
+
+
+
+
+# ==========================
+# ADVANCED MODES
+# ==========================
+
+
+
+def mode_5():
+
+
+    folder=folder_input()
+
+
+    if not folder:
+        return
+
+
+
+    prefix=input(
+        "Prefix: "
+    )
+
+
+    suffix=input(
+        "Suffix: "
+    )
+
+
+
+    prefix_suffix_rename(
+        folder,
+        prefix,
+        suffix
+    )
+
+
+
+
+
+
+
+def mode_6():
+
+
+    folder=folder_input()
+
+
+    if not folder:
+        return
+
+
+
+    print("""
+1. lowercase
+2. UPPERCASE
+3. Title Case
+""")
+
+
+    option=input(
+        "Select: "
+    )
+
+
+
+    if option=="2":
+
+        mode="upper"
+
+
+    elif option=="3":
+
+        mode="title"
+
+
+    else:
+
+        mode="lower"
+
+
+
+    convert_case_rename(
+        folder,
+        mode
+    )
+
+
+
+
+
+
+
+def mode_7():
+
+
+    folder=folder_input()
+
+
+    if not folder:
+        return
+
+
+
+    text=input(
+        "Remove text: "
+    )
+
+
+    remove_text_rename(
+        folder,
+        text
+    )
+
+
+
+
+
+
+
+def mode_8():
+
+
+    folder=folder_input()
+
+
+    if not folder:
+        return
+
+
+
+    ext=input(
+        "New extension: "
+    )
+
+
+    change_extension(
+        folder,
+        ext
+    )
+
+
+
+
+
+
+# ==========================
+# COMMAND SYSTEM
+# ==========================
+
+
+
+def command(cmd):
+
+
+    if cmd=="/help":
+
+        print("""
+Commands:
+
+/help
+/about
+/version
+/clear
+/quit
+""")
+
+
+    elif cmd=="/about":
+
+        print("""
+CodeSun Renamer v2.0.1
+
+Advanced CLI File Rename Utility
+
+Developer:
+Mahedi Hasan Rafsun
+
+Powered by CodeSun
+""")
+
+
+    elif cmd=="/version":
+
+        print(
+            GREEN+
+            "CodeSun Renamer v2.0.1"
+            +
+            RESET
+        )
+
+
+
+    elif cmd=="/clear":
+
+        clear()
+
+
+
+    elif cmd=="/quit":
+
+        handle_exit(
+            None,
+            None
+        )
+
+
+
+    else:
+
+        print(
+            RED+
+            "Unknown command"
+            +
+            RESET
+        )
+
+
+
+
+
+
 
 def main():
+
+
+    clear()
+
+
+    loading(
+        "Starting CodeSun Renamer..."
+    )
+
+
+    clear()
+
+
+    show_banner()
+
+
+
     while True:
-        os.system("clear")
+
+
         show_menu()
-        choice = input(f"\n{BOLD}Select option 1-5: {NC}").strip()
 
-        if choice.lower() == "/quit" or choice == "5":
-            print(f"\n{GREEN}Thanks for using RENAMER! Powered by CodeSun ✨{NC}")
-            sys.exit(0)
-        elif choice == "1":
-            mode_1_prefix()
-            input(f"\n{YELLOW}Press Enter to return to menu...{NC}")
-        elif choice == "2":
-            mode_2_replace()
-            input(f"\n{YELLOW}Press Enter to return to menu...{NC}")
-        elif choice == "3":
-            mode_3_date()
-            input(f"\n{YELLOW}Press Enter to return to menu...{NC}")
-        elif choice == "4":
-            mode_4_undo()
-            input(f"\n{YELLOW}Press Enter to return to menu...{NC}")
+
+
+        choice=input(
+            "Select: "
+        ).strip()
+
+
+
+        if choice.startswith("/"):
+
+            command(choice)
+
+
+
+        elif choice=="1":
+
+            mode_1()
+
+
+
+        elif choice=="2":
+
+            mode_2()
+
+
+
+        elif choice=="3":
+
+            mode_3()
+
+
+
+        elif choice=="4":
+
+            mode_4()
+
+
+
+        elif choice=="5":
+
+            mode_5()
+
+
+
+        elif choice=="6":
+
+            mode_6()
+
+
+
+        elif choice=="7":
+
+            mode_7()
+
+
+
+        elif choice=="8":
+
+            mode_8()
+
+
+
         else:
-            print(RED + "Invalid input! Please enter 1-5" + NC)
-            input(f"{YELLOW}Press Enter...{NC}")
 
-if __name__ == "__main__":
+            print(
+                RED+
+                "Invalid option"
+                +
+                RESET
+            )
+
+
+
+        input(
+            "\nPress Enter..."
+        )
+
+
+        clear()
+
+
+
+
+
+
+if __name__=="__main__":
+
     main()
